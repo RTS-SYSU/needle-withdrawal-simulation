@@ -1,0 +1,194 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>眼科机器人退针仿真</title>
+  <link rel="icon" href="data:,">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <header class="masthead">
+    <h1>眼科机器人退针仿真</h1>
+    <nav class="mode-nav" aria-label="仿真模式">
+      <a href="#cases" aria-current="page">案例仿真</a>
+      <a href="#manual">手动仿真</a>
+    </nav>
+  </header>
+  <main class="workbench">
+    <aside id="cases-panel" class="case-picker" aria-labelledby="cases-heading">
+      <div class="panel-heading"><h2 id="cases-heading">案例</h2><span id="case-count" class="count">0 例</span></div>
+      <button id="import-file" class="import-button" type="button">导入文件</button>
+      <input id="case-file" type="file" accept=".csv,.tsv,text/csv,text/tab-separated-values" hidden>
+      <p id="file-name" class="file-name" hidden></p>
+      <p id="file-message" class="file-message" role="status">选择一个 CSV 文件。</p>
+      <div id="case-filters" class="case-filters" hidden>
+        <details class="type-filter" open>
+          <summary id="type-filter-summary"></summary>
+          <div id="type-filter-options" role="group" aria-label="按违规类型筛选"></div>
+        </details>
+        <label class="branch-filter" for="branch-filter">分支
+          <select id="branch-filter" title="有 CSV 分支时按 CSV 筛选，否则按计算分支">
+            <option value="">全部</option>
+            <option>A</option><option>B</option><option>C</option><option>D</option><option>E</option>
+          </select>
+        </label>
+      </div>
+      <p id="case-empty" class="file-message" role="status" hidden>没有符合筛选条件的案例。</p>
+      <div id="case-list-heading" class="case-list-heading" hidden><span>案例编号</span><span>CSV 分支</span></div>
+      <ul id="case-list" class="case-list"></ul>
+    </aside>
+    <aside id="manual-panel" class="manual-panel" aria-labelledby="manual-heading" hidden>
+      <h2 id="manual-heading">手动输入初态</h2>
+      <fieldset>
+        <legend>电机初值 <span class="unit">μm</span></legend>
+        <div id="manual-motors" class="manual-motors"></div>
+      </fieldset>
+      <fieldset>
+        <legend>球心绝对坐标 <span class="unit">mm</span></legend>
+        <div class="manual-center">
+          <label>X <input id="manual-center-x" type="number" min="-10000" max="10000" step="any" required></label>
+          <label>Y <input id="manual-center-y" type="number" min="-10000" max="10000" step="any" required></label>
+          <label>Z <input id="manual-center-z" type="number" min="-10000" max="10000" step="any" required></label>
+        </div>
+        <details class="manual-cap">
+          <summary>从允许球冠取点</summary>
+          <label for="manual-phi">与 +Z 夹角 <output id="manual-phi-value" for="manual-phi">0.0°</output></label>
+          <input id="manual-phi" type="range" min="0" max="60" step="0.1" value="0">
+          <label for="manual-azimuth">方位角 <output id="manual-azimuth-value" for="manual-azimuth">0.0°</output></label>
+          <input id="manual-azimuth" type="range" min="-180" max="180" step="0.1" value="0">
+        </details>
+        <p id="manual-center-status" class="manual-note"></p>
+      </fieldset>
+      <p id="manual-error" class="warning" role="status" hidden></p>
+    </aside>
+
+    <section class="playback" aria-labelledby="selected-case">
+      <h2 id="selected-case">未选择案例</h2>
+      <p id="case-warning" class="warning" role="status" hidden></p>
+      <div class="viewer" id="viewer">
+        <div id="scene" aria-label="退针三维视图"></div>
+        <div class="view-overlay">
+          <div class="view-toolbar" role="group" aria-label="相机视角">
+            <button type="button" data-view="real" class="active" aria-pressed="true">真实对照</button>
+            <button type="button" data-view="iso" aria-pressed="false">立体</button>
+            <button type="button" data-view="x" aria-pressed="false">沿 X</button>
+            <button type="button" data-view="y" aria-pressed="false">沿 Y</button>
+            <button type="button" data-view="z" aria-pressed="false">沿 Z</button>
+            <button type="button" id="fit">适配全部</button>
+          </div>
+          <details class="view-options">
+            <summary>显示</summary>
+            <div class="view-options-panel">
+              <label><input id="default-axes-visible" type="checkbox" checked>默认 XYZ 坐标轴</label>
+              <label><input id="rcm-axes-visible" type="checkbox">以 RCM 为原点的坐标轴</label>
+              <label><input id="axis-line" type="checkbox" checked>针杆轴线与 RCM 垂足</label>
+              <label><input id="path-visible" type="checkbox" checked>退针轨迹与初态针杆</label>
+              <label><input id="cap-visible" type="checkbox">球心允许范围</label>
+              <label class="opacity-control" for="opacity">眼球透明度 <output id="opacity-value" for="opacity">18%</output></label>
+              <input id="opacity" type="range" min="0" max="0.6" step="0.01" value="0.18">
+            </div>
+          </details>
+          <div class="legend">
+            <span><i class="eye-dot"></i>眼球内壁</span><span><i class="rcm-dot"></i>固定 RCM</span>
+            <span><i class="needle-dot"></i>针杆 / 针尖</span><span><i class="center-dot"></i>球心</span>
+            <span><i class="path-dot"></i>退针轨迹</span><span><i class="initial-dot"></i>初态针杆</span>
+          </div>
+        </div>
+        <div class="point-label" id="rcm-label" hidden>RCM <small>固定点</small></div>
+        <div class="point-label" id="tip-label" hidden>针尖</div>
+        <div class="point-label" id="center-label" hidden>球心 C</div>
+        <div class="scene-bottom">
+          <span>拖动旋转 · 滚轮缩放 · 右键 / Shift 拖动平移</span>
+          <div class="scene-actions"><button type="button" id="focus-eye">聚焦眼球</button><button type="button" id="focus-rcm">放大 RCM</button></div>
+        </div>
+        <p class="scene-prompt" id="scene-prompt">导入 CSV 后查看退针轨迹</p>
+        <div class="error" id="error" role="alert" hidden></div>
+      </div>
+      <div class="transport" aria-label="退针播放控制">
+        <div class="transport-buttons">
+          <button id="play" class="play-button" type="button" disabled>播放退针</button>
+          <button id="rewind" type="button" disabled>回到初态</button>
+        </div>
+        <div class="seek">
+          <div class="seek-heading">
+            <label for="case-progress">退针进度</label>
+            <output id="progress-value" for="case-progress">0%</output>
+          </div>
+          <div class="seek-track">
+            <div id="violation-track" class="violation-track" hidden>
+              <button id="violation-marker" class="violation-marker" type="button"></button>
+            </div>
+            <input id="case-progress" type="range" min="0" max="1" step="any" value="0" disabled>
+            <div id="stage-marks" class="stage-marks" aria-hidden="true"></div>
+          </div>
+          <p id="branch-stage" class="branch-stage" aria-live="off"></p>
+        </div>
+      </div>
+    </section>
+
+    <aside class="readings" aria-labelledby="readings-heading">
+      <div class="panel-heading"><h2 id="readings-heading">当前帧</h2></div>
+      <dl class="simulation-summary">
+        <div><dt>退针算法</dt><dd id="algorithm-name">—</dd></div>
+        <div><dt>计算分支</dt><dd id="computed-branch">—</dd></div>
+      </dl>
+      <div class="threshold-setting">
+        <label for="rcm-threshold">RCM 偏离阈值</label>
+        <div class="threshold-value">
+          <input id="rcm-threshold" type="number" min="0" step="any" required aria-describedby="threshold-unit threshold-error">
+          <span class="unit" id="threshold-unit">μm</span>
+        </div>
+        <p id="threshold-error" class="warning" role="status" hidden></p>
+      </div>
+      <dl class="metric-list">
+        <div class="metric"><dt>针杆轴线距 RCM</dt><dd><output id="rcm-error">—</output> <span class="unit">μm</span><span id="rcm-status" class="metric-status" hidden></span></dd></div>
+        <div class="metric"><dt>针尖距眼球内壁</dt><dd><output id="clearance">—</output> <span class="unit">mm</span><span id="inside-status" class="metric-status" hidden></span></dd></div>
+        <div class="metric"><dt>沿针杆投影</dt><dd><output id="depth">—</output> <span class="unit">mm</span><span id="depth-status" class="metric-status" hidden></span></dd></div>
+      </dl>
+      <section class="readout-group" aria-labelledby="motors-heading">
+        <h3 id="motors-heading">电机位置 <span class="unit">μm</span></h3>
+        <dl id="motors" class="motor-list">
+          <div><dt><span>Q1</span><span class="motor-limit"></span></dt><dd><output id="motor-0">—</output><span class="motor-status" hidden></span></dd></div>
+          <div><dt><span>Q2</span><span class="motor-limit"></span></dt><dd><output id="motor-1">—</output><span class="motor-status" hidden></span></dd></div>
+          <div><dt><span>Q3</span><span class="motor-limit"></span></dt><dd><output id="motor-2">—</output><span class="motor-status" hidden></span></dd></div>
+          <div><dt><span>Q4</span><span class="motor-limit"></span></dt><dd><output id="motor-3">—</output><span class="motor-status" hidden></span></dd></div>
+          <div><dt><span>Q5</span><span class="motor-limit"></span></dt><dd><output id="motor-4">—</output><span class="motor-status" hidden></span></dd></div>
+        </dl>
+      </section>
+      <section class="readout-group" aria-labelledby="position-heading">
+        <h3 id="position-heading">位置 <span class="unit">机器人 XYZ · mm</span></h3>
+        <h4 id="absolute-position-heading">绝对位置</h4>
+        <table class="coordinate-table" aria-labelledby="absolute-position-heading">
+          <thead><tr><td></td><th scope="col">X</th><th scope="col">Y</th><th scope="col">Z</th></tr></thead>
+          <tbody>
+            <tr><th scope="row">球心</th><td id="center-x">—</td><td id="center-y">—</td><td id="center-z">—</td></tr>
+            <tr><th scope="row">针尖</th><td id="tip-x">—</td><td id="tip-y">—</td><td id="tip-z">—</td></tr>
+          </tbody>
+        </table>
+        <h4 id="relative-position-heading">相对位置 <span class="unit">RCM 为原点</span></h4>
+        <table class="coordinate-table" aria-labelledby="relative-position-heading">
+          <thead><tr><td></td><th scope="col">X</th><th scope="col">Y</th><th scope="col">Z</th></tr></thead>
+          <tbody>
+            <tr><th scope="row">球心</th><td id="relative-center-x">—</td><td id="relative-center-y">—</td><td id="relative-center-z">—</td></tr>
+            <tr><th scope="row">针尖</th><td id="relative-tip-x">—</td><td id="relative-tip-y">—</td><td id="relative-tip-z">—</td></tr>
+          </tbody>
+        </table>
+        <h4 id="angles-heading">偏角</h4>
+        <dl class="angle-list" aria-labelledby="angles-heading">
+          <div><dt aria-label="阿尔法">α</dt><dd><output id="angle-alpha">—</output><span class="unit">°</span></dd></div>
+          <div><dt aria-label="贝塔">β</dt><dd><output id="angle-beta">—</output><span class="unit">°</span></dd></div>
+        </dl>
+      </section>
+    </aside>
+  </main>
+  <script>window.addEventListener('error',e=>{const box=document.getElementById('error');box.hidden=false;box.textContent='页面错误：'+(e.message||e.target.src||'资源加载失败')},true);</script>
+  <script src="vendor/three.classic.min.js"></script>
+  <script src="kinematics.js"></script>
+  <script src="replay.js"></script>
+  <script src="case-file.js"></script>
+  <script src="manual-input.js"></script>
+  <script src="case-player.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>
