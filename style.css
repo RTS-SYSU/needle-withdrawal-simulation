@@ -378,6 +378,7 @@ h3 { font-size: 14px; font-weight: 620; }
 .stage-marks span { position: absolute; left: var(--mark); width: 1px; height: 5px; background: #536478; }
 .branch-stage { min-height: 1.4em; font-size: 12px; }
 
+.settings { margin-bottom: 14px; padding-bottom: 6px; border-bottom: 1px solid var(--line); }
 .simulation-summary { margin-top: 6px; }
 .simulation-summary > div {
   display: grid;
@@ -468,7 +469,7 @@ h3 { font-size: 14px; font-weight: 620; }
   .workbench { grid-template-columns: minmax(146px, 1fr) minmax(0, 3.5fr); }
   .viewer { height: clamp(350px, 62dvh, 600px); }
   .readings { grid-column: 2; display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 0 14px; }
-  .readings > .panel-heading, .simulation-summary, .threshold-setting, .metric-list { grid-column: 1 / -1; }
+  .readings > .settings, .readings > .panel-heading, .simulation-summary, .metric-list { grid-column: 1 / -1; }
 }
 @media (max-width: 540px) {
   .workbench { grid-template-columns: minmax(0, 1fr); }

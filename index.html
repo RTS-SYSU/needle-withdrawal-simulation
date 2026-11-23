@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>眼科机器人退针仿真</title>
   <link rel="icon" href="data:,">
-  <link rel="stylesheet" href="style.css">
+  <link rel="stylesheet" href="style.css?v=2">
 </head>
 <body>
   <header class="masthead">
@@ -128,19 +128,22 @@
     </section>
 
     <aside class="readings" aria-labelledby="readings-heading">
+      <section class="settings" aria-labelledby="settings-heading">
+        <div class="panel-heading"><h2 id="settings-heading">设置</h2></div>
+        <div class="threshold-setting">
+          <label for="rcm-threshold">RCM 偏离阈值</label>
+          <div class="threshold-value">
+            <input id="rcm-threshold" type="number" min="0" step="any" required aria-describedby="threshold-unit threshold-error">
+            <span class="unit" id="threshold-unit">μm</span>
+          </div>
+          <p id="threshold-error" class="warning" role="status" hidden></p>
+        </div>
+      </section>
       <div class="panel-heading"><h2 id="readings-heading">当前帧</h2></div>
       <dl class="simulation-summary">
         <div><dt>退针算法</dt><dd id="algorithm-name">—</dd></div>
         <div><dt>计算分支</dt><dd id="computed-branch">—</dd></div>
       </dl>
-      <div class="threshold-setting">
-        <label for="rcm-threshold">RCM 偏离阈值</label>
-        <div class="threshold-value">
-          <input id="rcm-threshold" type="number" min="0" step="any" required aria-describedby="threshold-unit threshold-error">
-          <span class="unit" id="threshold-unit">μm</span>
-        </div>
-        <p id="threshold-error" class="warning" role="status" hidden></p>
-      </div>
       <dl class="metric-list">
         <div class="metric"><dt>针杆轴线距 RCM</dt><dd><output id="rcm-error">—</output> <span class="unit">μm</span><span id="rcm-status" class="metric-status" hidden></span></dd></div>
         <div class="metric"><dt>针尖距眼球内壁</dt><dd><output id="clearance">—</output> <span class="unit">mm</span><span id="inside-status" class="metric-status" hidden></span></dd></div>
