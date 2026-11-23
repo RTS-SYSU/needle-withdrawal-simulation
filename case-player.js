@@ -277,8 +277,12 @@ function mountCaseReplay({applyFrame, showPath}) {
   violationMarker.addEventListener('click', () => seek(selected.violation.u));
   document.addEventListener('visibilitychange', () => { if (document.hidden) pause(); });
   window.addEventListener('hashchange', syncMode);
-  const example = readManualState();
-  loadCases([{...example, id: '示例案例', branch: example.computedBranch, violation: null, violationTypes: []}]);
+  const exampleQ = [12500, 12500, 23344.525, 19123.275, 2284.9];
+  loadCases([{
+    id: 'case-001', algorithm: ORDINARY_EXIT, branch: 'D', computedBranch: selectBranch(exampleQ),
+    q: exampleQ, center: [34850, 59300, 65394],
+    violation: {u: 0.5}, violationTypes: ['针杆轴线偏离 RCM'],
+  }]);
   status('当前为内置示例，导入 CSV 后将显示文件中的案例。');
   syncMode();
   return renderFrame;
