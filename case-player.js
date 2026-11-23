@@ -277,6 +277,9 @@ function mountCaseReplay({applyFrame, showPath}) {
   violationMarker.addEventListener('click', () => seek(selected.violation.u));
   document.addEventListener('visibilitychange', () => { if (document.hidden) pause(); });
   window.addEventListener('hashchange', syncMode);
+  const example = readManualState();
+  loadCases([{...example, id: '示例案例', branch: example.computedBranch, violation: null, violationTypes: []}]);
+  status('当前为内置示例，导入 CSV 后将显示文件中的案例。');
   syncMode();
   return renderFrame;
 }
