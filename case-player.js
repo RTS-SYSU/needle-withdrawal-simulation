@@ -77,7 +77,6 @@ function mountCaseReplay({applyFrame, showPath}) {
   }
 
   function caseIssue(entry) {
-    if (!entry.computedBranch) return `当前页面无法回放算法 ${entry.algorithm}。`;
     if (entry.branch !== null && entry.branch !== entry.computedBranch) {
       return `CSV 标记为 ${entry.branch} 分支，按电机初态计算得到 ${entry.computedBranch} 分支。请核对 CSV。`;
     }

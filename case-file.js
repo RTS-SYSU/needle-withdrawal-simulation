@@ -63,7 +63,7 @@ function parseCases(text) {
   const header = modern ? columns : columns.map(column => LEGACY_ALIASES.get(column) ?? column);
   const idColumn = modern ? 'case_id' : 'id';
   const motorColumns = modern ? MOTOR_COLUMNS : LEGACY_MOTOR_COLUMNS;
-  const fields = modern ? [idColumn, 'algorithm', 'branch'] : [idColumn];
+  const fields = modern ? [idColumn, 'branch'] : [idColumn];
   if (new Set(header).size !== header.length) throw new Error('表头有重复列');
   const missing = [...fields, ...CENTER_COLUMNS, ...motorColumns].filter(column => !header.includes(column));
   if (missing.length) throw new Error('缺少列 ' + missing.join(', '));
@@ -88,9 +88,8 @@ function parseCases(text) {
       return value;
     });
     const center = CENTER_COLUMNS.map(column => numeric(record[column], column, line));
-    const algorithm = modern ? record.algorithm : ORDINARY_EXIT;
-    if (!algorithm) throw new Error(`第 ${line} 行缺少算法名称`);
-    const computedBranch = algorithm === ORDINARY_EXIT ? selectBranch(q) : null;
+    const algorithm = record.algorithm || (modern ? null : ORDINARY_EXIT);
+    const computedBranch = selectBranch(q);
     const branch = modern ? record.branch : null;
     if (modern && !/^[A-E]$/.test(branch)) throw new Error(`第 ${line} 行 branch 须为 A～E`);
 
